@@ -1,0 +1,17 @@
+#Libraries Installed/Used
+sudo apt-get install python3-pip
+sudo pip3 install --upgrade setuptools
+wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/raspi-blinka.py
+sudo python3 raspi-blinka.py
+
+sudo pip3 install adafruit-circuitpython-busdevice
+sudo pip3 install adafruit-circuitpython-mprls
+sudo pip3 install Adafruit-ADS1x15
+sudo pip3 install adafruit-circuitpython-mcp4725
+sudo pip3 install pymodbus
+
+
+#Extra
+sudo pip3 pyinstaller
+#this is to make standalone exe files for all pi systems to run with little to no setup
+
