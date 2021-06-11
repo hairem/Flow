@@ -18,8 +18,10 @@ bme = BME280(t_mode=BME280_OSAMPLE_8, p_mode=BME280_OSAMPLE_8, h_mode=BME280_OSA
 #Global Values
 #Values will be pulled/updated form config.txt
 SN = 000 
-Slope = 0.000
-Offset = 0.000
+Fslope = 0.000
+Foffset = 0.000
+Rslope = 0.000
+Roffset = 0.000
 Site = "Test"
 LastDAC = 0 #0 to 4095 range 0V to 5V
 
