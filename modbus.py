@@ -5,8 +5,16 @@
 
 import time
 import argparse
+import board
+import  adafruit_mprls
+import Adafruit_BME280
+#settings
+i2c = board.I2C()
+mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
+bme = BME280(t_mode=BME280_OSAMPLE_8, p_mode=BME280_OSAMPLE_8, h_mode=BME280_OSAMPLE_8)
 
 """
+
 Pymodbus Server With Updating Thread
 --------------------------------------------------------------------------
 This is an example of having a background thread updating the
@@ -44,9 +52,26 @@ builder = BinaryPayloadBuilder(wordorder=Endian.Big, byteorder=Endian.Big)
 # --------------------------------------------------------------------------- #
 # define your callback process
 # --------------------------------------------------------------------------- #
+def run_once():
+ """
+	This is a Run Once only script to check previous settings from Config file.
+ """
+ config = open("config.txt","r")
+ values = config.read()
+ run_once.func_code = (lamda:None).func_code
 
 def sensor_reader():
-    print("Hello")
+  """
+   This section will read in data from the vaious sensors and return all values as data to be converted into 
+   Modbus channels.
+  Note: 1hPa = 0.75006mmHg
+  """
+ ABSpressure = round(mpr.pressure/0.75006,5) # mmHg
+ AmbPressure = round(bme.read_pressure()/0.75006),5) # mmHg
+ GaugePress = round(((mpr.pressure*10) - bme.read_pressure())/0.750006,4) # mmHg
+ temp = bme.read_temperature() #Centigrade
+ data = [ABSpressure, AmbPressure, GuagePress]
+ return(data)
 
 def updating_writer(context, device, baudrate):
     """ A worker process that runs every so often and
@@ -107,6 +132,7 @@ def run_updating_server(device, baudrate):
 
 
 if __name__ == "__main__":
+    run_once()
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-d", "--device", help="device to read from",

@@ -9,7 +9,7 @@ sudo pip3 install adafruit-circuitpython-mprls
 sudo pip3 install Adafruit-ADS1x15
 sudo pip3 install adafruit-circuitpython-mcp4725
 sudo pip3 install pymodbus
-
+sudo pip3 install Adafruit-BME280
 
 #Extra
 sudo pip3 pyinstaller
