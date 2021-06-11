@@ -8,10 +8,20 @@ import argparse
 import board
 import  adafruit_mprls
 import Adafruit_BME280
+
 #settings
+
 i2c = board.I2C()
 mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
 bme = BME280(t_mode=BME280_OSAMPLE_8, p_mode=BME280_OSAMPLE_8, h_mode=BME280_OSAMPLE_8)
+
+#Global Values
+#Values will be pulled/updated form config.txt
+SN = 000 
+Slope = 0.000
+Offset = 0.000
+Site = "Test"
+LastDAC = 0 #0 to 4095 range 0V to 5V
 
 """
 
@@ -127,7 +137,7 @@ def run_updating_server(device, baudrate):
     loop = LoopingCall(f=updating_writer,
                        context=context, device=device, baudrate=baudrate)
     loop.start(time, now=False)  # initially delay by time
-    StartTcpServer(context, identity=identity, address=("localhost", 502))
+    StartTcpServer(context, identity=identity, address=(192.168.1.79, 502))
 
 
 

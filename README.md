@@ -9,4 +9,15 @@ This document is where I will be storing the libraries and manager used import s
 
 1. I will need to make a config file to store long term values as well as recover last settings so when system is rebooted it will return to its previous state.
 2. This will need to be a compiled program so it can be installed without installing the additional libraries and to lock library versions long term.
-3. 
+3. This will be a 32bit Modbus system with a webpage for interfacing with the unit remotely
+4. I am using a 
+	Honeywell:
+		BME280 : Ambient Pressure, Temperature, and Humidity Sensor
+		MPRLS : High Resolution Ported Pressure Sensor 0-25psi Absolute 24bit
+	Microchip:
+		 MCP4725 : Digital to Analog Convertor 12bit
+	Texas Instruments:
+		 ADS1115 : Analog to Digital Convertor 16bit
+		 TLV2462 : OP-Amp configured as voltage follower
+  At the moment I am using pre-made chips from Adafruit but plan to make a custom board using the base parts listed
+5. Libraries used will be stored in the Flow_Setup.txt file.
