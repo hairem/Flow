@@ -7,13 +7,20 @@ import time
 import argparse
 import board
 import  adafruit_mprls
-import Adafruit_BME280
+import smbus2
+import bme280
+
+#setup BME paramets
+port = 1
+address = 0x76
+bus = smbus2.SMBus(port)
+compensation_params = bme280.load_calibration_params(bus, address)
 
 #settings
 
 i2c = board.I2C()
 mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
-bme = BME280(t_mode=BME280_OSAMPLE_8, p_mode=BME280_OSAMPLE_8, h_mode=BME280_OSAMPLE_8)
+bme = bme280.sample(bus, address)
 
 #Global Values
 #Values will be pulled/updated form config.txt
@@ -79,9 +86,9 @@ def sensor_reader():
   Note: 1hPa = 0.75006mmHg
   """
  ABSpressure = round(mpr.pressure/0.75006,5) # mmHg
- AmbPressure = round(bme.read_pressure()/0.75006),5) # mmHg
- GaugePress = round(((mpr.pressure*10) - bme.read_pressure())/0.750006,4) # mmHg
- temp = bme.read_temperature() #Centigrade
+ AmbPressure = round(bme.pressure()/0.75006),5) # mmHg
+ GaugePress = round(((mpr.pressure*10) - bme.pressure())/0.750006,4) # mmHg
+ temp = bme.temperature() #Centigrade
  data = [ABSpressure, AmbPressure, GuagePress]
  return(data)
 
