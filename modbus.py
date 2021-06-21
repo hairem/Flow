@@ -15,7 +15,7 @@ import busio
 import random
 
 #setup BME paramets
-compensation_params = bme280.load_calibration_params(bus, address)
+#compensation_params = bme280.load_calibration_params(smbus2.SMBus(1), 0x76)
 
 #settings
 i2c = board.I2C()
@@ -54,7 +54,7 @@ a python thread::
 # --------------------------------------------------------------------------- #
 # import the modbus libraries we need
 # --------------------------------------------------------------------------- #
-from pymodbus.server.async import StartTcpServer
+from pymodbus.server.asynchronous import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSequentialDataBlock
 from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
@@ -83,34 +83,39 @@ def run_once():
  """
 	This is a Run Once only script to check previous settings from Config file.
  """
- config = open("config.txt","r")
- values = config.read()
- run_once.func_code = (lamda:None).func_code
+ print("ran config input")
+ return()
+# config = open("config.txt","r")
+# values = config.read()
+# run_once.func_code = (lamda:None).func_code
 
 def sensor_reader():
-  """
+ """
    This section will read in data from the vaious sensors and return all values as data to be converted into 
    Modbus channels.
   Note: 1hPa = 0.75006mmHg
-  """
- ABSpressure = round(mpr.pressure/0.75006,5) # mmHg ABS
- AmbPressure = round(bme.pressure()/0.75006),5) # mmHg ABS
- GaugePress = round(((mpr.pressure*10) - bme.pressure())/0.750006,4) # mmHg
- temp = bme.temperature() #Centigrade
- FV = (round(adc.read_adc(2, gain=GAIN)*M - b,4)
- DV = (round(adc.read_adc(3, gain=GAIN)*M - b,4)
- data = [ABSpressure, AmbPressure, GuagePress,temp,FV,DV]
+ """
+ dac.raw_value = random.randint(10, 4050)
+ compensation_params = bme280.load_calibration_params(smbus2.SMBus(1), 0x76)
+ ABSpressure = round(mpr.pressure,4)
+ AMBPressure = round(bme.pressure,4)
+ GaugePress = round((mpr.pressure - bme.pressure)/2.4908890833333,2)
+ temp = round(bme.temperature,2)
+ FV = (round(adc.read_adc(2, gain=GAIN)*M - b,4))
+ DV = (round(adc.read_adc(3, gain=GAIN)*M - b,4))
+ data = [ABSpressure, AMBPressure, GaugePress, temp, FV, DV, 1.0]
+ print(str(data))
  return(data)
 
-def updating_writer(context, device, baudrate):
+def updating_writer(context):
     """ A worker process that runs every so often and
     updates live values of the context. It should be noted
     that there is a race condition for the update.
     :param arguments: The input arguments to the call
     """
     log.debug("updating the context")
-    log.debug("device - {}, baudrate-{}".format(device, baudrate))
     data = sensor_reader()
+    #print(data)
     if data:
         # We can not directly write float values to registers, Use BinaryPayloadBuilder to convert float to IEEE-754 hex integer
         # Reset buffer so that we are not appending to the existing payload from previous iterations.
@@ -126,16 +131,16 @@ def updating_writer(context, device, baudrate):
         context[slave_id].setValues(register, address, registers)
         
 
-def run_updating_server(device, baudrate):
+def run_updating_server():
     # ----------------------------------------------------------------------- #
     # initialize your data store
     # ----------------------------------------------------------------------- #
 
     store = ModbusSlaveContext(
-        di=ModbusSequentialDataBlock(0, [17] * 100),
-        co=ModbusSequentialDataBlock(0, [17] * 100),
-        hr=ModbusSequentialDataBlock(0, [17] * 100),
-        ir=ModbusSequentialDataBlock(0, [17] * 100))
+        di=ModbusSequentialDataBlock(0, [100] * 100),
+        co=ModbusSequentialDataBlock(0, [100] * 100),
+        hr=ModbusSequentialDataBlock(0, [100] * 100),
+        ir=ModbusSequentialDataBlock(0, [100] * 100))
     context = ModbusServerContext(slaves=store, single=True)
 
     # ----------------------------------------------------------------------- #
@@ -154,19 +159,12 @@ def run_updating_server(device, baudrate):
     # ----------------------------------------------------------------------- #
     time = 5  # 5 seconds delay
     loop = LoopingCall(f=updating_writer,
-                       context=context, device=device, baudrate=baudrate)
+                       context=context)
     loop.start(time, now=False)  # initially delay by time
-    StartTcpServer(context, identity=identity, address=(192.168.1.79, 502))
+    StartTcpServer(context, identity=identity, address=("172.16.20.39", 502))
 
 
 
 if __name__ == "__main__":
     run_once()
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-d", "--device", help="device to read from",
-                        default="/dev/ttyUSB0")
-    parser.add_argument("-s", "--speed", help="speed in bps", default=9600,
-                        type=int)
-    args = parser.parse_args()
-    run_updating_server(args.device, args.speed)
+    run_updating_server()
