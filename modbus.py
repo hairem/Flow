@@ -3,28 +3,36 @@
 # https://stackoverflow.com/questions/55111572/convert-rs232-ascii-to-modbus-tcp-using-pymodbus
 # Works with pymodbus 2.1.0
 
+#General Libraries and Sensor Lbraries
 import time
-import argparse
 import board
-import  adafruit_mprls
+import adafruit_mprls
 import smbus2
 import bme280
+import Adafruit_ADS1x15
+import adafruit_mcp4725
+import busio
+import random
 
 #setup BME paramets
-port = 1
-address = 0x76
-bus = smbus2.SMBus(port)
 compensation_params = bme280.load_calibration_params(bus, address)
 
 #settings
-
 i2c = board.I2C()
 mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
-bme = bme280.sample(bus, address)
+bme = bme280.sample(smbus2.SMBus(1), 0x76)
+adc = Adafruit_ADS1x15.ADS1115()
+dac = adafruit_mcp4725.MCP4725(busio.I2C(board.SCL, board.SDA))
+
+#ADC Setting
+GAIN = 2/3 #Max +/-6.144V
+M = 0.0001875 #Voltage Slope
+b = 0.000 #Voltage offset
 
 #Global Values
+
 #Values will be pulled/updated form config.txt
-SN = 000 
+SN = 000
 Fslope = 0.000
 Foffset = 0.000
 Rslope = 0.000
@@ -85,11 +93,13 @@ def sensor_reader():
    Modbus channels.
   Note: 1hPa = 0.75006mmHg
   """
- ABSpressure = round(mpr.pressure/0.75006,5) # mmHg
- AmbPressure = round(bme.pressure()/0.75006),5) # mmHg
+ ABSpressure = round(mpr.pressure/0.75006,5) # mmHg ABS
+ AmbPressure = round(bme.pressure()/0.75006),5) # mmHg ABS
  GaugePress = round(((mpr.pressure*10) - bme.pressure())/0.750006,4) # mmHg
  temp = bme.temperature() #Centigrade
- data = [ABSpressure, AmbPressure, GuagePress]
+ FV = (round(adc.read_adc(2, gain=GAIN)*M - b,4)
+ DV = (round(adc.read_adc(3, gain=GAIN)*M - b,4)
+ data = [ABSpressure, AmbPressure, GuagePress,temp,FV,DV]
  return(data)
 
 def updating_writer(context, device, baudrate):
