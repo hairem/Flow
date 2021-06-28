@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 # Log data from serial port
 # https://stackoverflow.com/questions/55111572/convert-rs232-ascii-to-modbus-tcp-using-pymodbus
@@ -26,19 +27,10 @@ dac = adafruit_mcp4725.MCP4725(busio.I2C(board.SCL, board.SDA))
 
 #ADC Setting
 GAIN = 2/3 #Max +/-6.144V
-M = 0.0001875 #Voltage Slope
-b = 0.000 #Voltage offset
 
-#Global Values
-
-#Values will be pulled/updated form config.txt
-SN = 000
-Fslope = 0.000
-Foffset = 0.000
-Rslope = 0.000
-Roffset = 0.000
-Site = "Test"
-LastDAC = 0 #0 to 4095 range 0V to 5V
+#Global First run Flag
+global flag
+flag = 1
 
 """
 
@@ -79,15 +71,35 @@ builder = BinaryPayloadBuilder(wordorder=Endian.Big, byteorder=Endian.Big)
 # --------------------------------------------------------------------------- #
 # define your callback process
 # --------------------------------------------------------------------------- #
-def run_once():
+def run_once(context):
  """
 	This is a Run Once only script to check previous settings from Config file.
+        Using the global variable flag to determine if this is a first run or not.
  """
- print("ran config input")
- return()
-# config = open("config.txt","r")
-# values = config.read()
-# run_once.func_code = (lamda:None).func_code
+ global flag
+ if flag == 1:
+  builder.reset()
+  print("ran config input")
+  config = open("Config.txt","r")
+  V = config.read()
+  values = V.splitlines()
+  print(values)
+  values.pop(0)
+  Val = []
+  for item in values:
+   Val.append(float(item))
+#   dac.set_value = int(Val[2])
+  print(Val)
+  for item in Val:
+   builder.add_32bit_float(item)
+  setreg = builder.to_registers()
+  log.debug("settings: " + str(setreg))
+  context[0x00].setValues(3, 0x14, setreg)
+  builder.reset()
+  flag = 0
+  return()
+ else:
+  return()
 
 def sensor_reader():
  """
@@ -95,14 +107,13 @@ def sensor_reader():
    Modbus channels.
   Note: 1hPa = 0.75006mmHg
  """
- dac.raw_value = random.randint(10, 4050)
  compensation_params = bme280.load_calibration_params(smbus2.SMBus(1), 0x76)
  ABSpressure = round(mpr.pressure,4)
  AMBPressure = round(bme.pressure,4)
  GaugePress = round((mpr.pressure - bme.pressure)/2.4908890833333,2)
  temp = round(bme.temperature,2)
- FV = (round(adc.read_adc(2, gain=GAIN)*M - b,4))
- DV = (round(adc.read_adc(3, gain=GAIN)*M - b,4))
+ FV = (round(adc.read_adc(2, gain=GAIN),4))
+ DV = (round(adc.read_adc(3, gain=GAIN),4))
  data = [ABSpressure, AMBPressure, GaugePress, temp, FV, DV, 1.0]
  print(str(data))
  return(data)
@@ -115,6 +126,8 @@ def updating_writer(context):
     """
     log.debug("updating the context")
     data = sensor_reader()
+    context = context
+    run_once(context)
     #print(data)
     if data:
         # We can not directly write float values to registers, Use BinaryPayloadBuilder to convert float to IEEE-754 hex integer
@@ -163,8 +176,26 @@ def run_updating_server():
     loop.start(time, now=False)  # initially delay by time
     StartTcpServer(context, identity=identity, address=("172.16.20.39", 502))
 
-
-
 if __name__ == "__main__":
-    run_once()
     run_updating_server()
+
+"""
+Modbus map:
+ Coils:
+  0:DAC Status   (If False DAC = 0, If True DAC = reg(40095))
+  1:Pump Status  (If False Pump OFF, If True Pump ON)
+ Holding Registers: 32bit Channels Sensor Channels
+  0-1: Manifold Pressure (MPRLS)
+  2-3: Ambient Pressure  (BME280)
+  4-5: GaugePressure     (MPRLS-BME280)
+  6-7: Tempurature       (BME280)
+  8-9: Flow Feedback     (ADS1115 Channel 2)
+  10-11: Flow Setting      (ADS1115 Channel 3)
+ Hold Registers: 32bit Settings that are User Set and stored in a Config.txt
+  20-21: MFC SN     (Taken from MFC)
+  22-23: FSlope     (Feedback Reading)
+  24-25: FOffset    (Feedback Reading)
+  26-27: RSLope     (SetPoint Reading)
+  28-29: ROffset    (SetPoint Reading)
+  30-31: DACSetting (DAC Last Setpoint)
+"""

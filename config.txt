@@ -6,13 +6,9 @@ Sn: 01
 
 
 #Previous Values
-dac: 0 
+dac: 0.0 
 Fslope: 1.000
 Foffset: 0.000
 Rslope: 1.000
 Roffset: 0.000
-#Site is the current location
-#Sn is the Serial Number of the Flow Controller installed
-#Slope and Offset are calculated values made during calibrations
-#dac is the set point for the last set flow value
 

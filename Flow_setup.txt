@@ -9,8 +9,9 @@ sudo pip3 install adafruit-circuitpython-mprls
 sudo pip3 install Adafruit-ADS1x15
 sudo pip3 install adafruit-circuitpython-mcp4725
 sudo pip3 install pymodbus
-sudo pip3 install RPi.bme280
 sudo pip3 install bme280 #makes calls in shell not pythong
+sudo pip3 install twisted
+
 #Extra
 sudo pip3 pyinstaller
 #this is to make standalone exe files for all pi systems to run with little to no setup
