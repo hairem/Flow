@@ -88,11 +88,11 @@ def run_once(context):
   Val = []
   for item in values:
    Val.append(float(item))
-#   dac.set_value = int(Val[2])
   print(Val)
   for item in Val:
    builder.add_32bit_float(item)
   setreg = builder.to_registers()
+  dac.raw_value = int(Val[1])
   log.debug("settings: " + str(setreg))
   context[0x00].setValues(3, 0x14, setreg)
   builder.reset()
@@ -112,8 +112,8 @@ def sensor_reader():
  AMBPressure = round(bme.pressure,4)
  GaugePress = round((mpr.pressure - bme.pressure)/2.4908890833333,2)
  temp = round(bme.temperature,2)
- FV = (round(adc.read_adc(2, gain=GAIN),4))
- DV = (round(adc.read_adc(3, gain=GAIN),4))
+ FV = (round(adc.read_adc(2, gain=GAIN)*0.0001875,4))
+ DV = (round(adc.read_adc(3, gain=GAIN)*0.0001875,4))
  data = [ABSpressure, AMBPressure, GaugePress, temp, FV, DV, 1.0]
  print(str(data))
  return(data)
@@ -142,7 +142,7 @@ def updating_writer(context):
         address = 0x00 # starting offset of register to write (0 --> 40001)
         log.debug("new values: " + str(registers))
         context[slave_id].setValues(register, address, registers)
-        
+
 
 def run_updating_server():
     # ----------------------------------------------------------------------- #
