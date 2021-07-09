@@ -1,4 +1,4 @@
-
+#
 #!/usr/bin/env python
 # Log data from serial port
 # https://stackoverflow.com/questions/55111572/convert-rs232-ascii-to-modbus-tcp-using-pymodbus
@@ -14,6 +14,7 @@ import Adafruit_ADS1x15
 import adafruit_mcp4725
 import busio
 import random
+import RPi.GPIO as GPIO  
 
 #setup BME paramets
 #compensation_params = bme280.load_calibration_params(smbus2.SMBus(1), 0x76)
@@ -24,6 +25,8 @@ mpr = adafruit_mprls.MPRLS(i2c, psi_min=0, psi_max=25)
 bme = bme280.sample(smbus2.SMBus(1), 0x76)
 adc = Adafruit_ADS1x15.ADS1115()
 dac = adafruit_mcp4725.MCP4725(busio.I2C(board.SCL, board.SDA))
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(4, GPIO.OUT)
 
 #ADC Setting
 GAIN = 2/3 #Max +/-6.144V
@@ -97,6 +100,8 @@ def run_once(context):
   context[0x00].setValues(3, 0x14, setreg)
   builder.reset()
   flag = 0
+  coil = [1,0,0,1,1]
+  context[0x00].setValues(15, 0, coil)
   return()
  else:
   return()
@@ -112,8 +117,8 @@ def sensor_reader():
  AMBPressure = round(bme.pressure,4)
  GaugePress = round((mpr.pressure - bme.pressure)/2.4908890833333,2)
  temp = round(bme.temperature,2)
- FV = (round(adc.read_adc(2, gain=GAIN)*0.0001875,4))
- DV = (round(adc.read_adc(3, gain=GAIN)*0.0001875,4))
+ FV = (round(adc.read_adc(2, gain=GAIN)*0.0001875,4))  #voltage
+ DV = (round(adc.read_adc(3, gain=GAIN)*0.30518509476,4)) #sccm
  data = [ABSpressure, AMBPressure, GaugePress, temp, FV, DV, 1.0]
  print(str(data))
  return(data)
@@ -142,7 +147,9 @@ def updating_writer(context):
         address = 0x00 # starting offset of register to write (0 --> 40001)
         log.debug("new values: " + str(registers))
         context[slave_id].setValues(register, address, registers)
-
+        coils = context[slave_id].getValues(1,0,8)
+        print(coils[0])
+        GPIO.output(4, coils[0])
 
 def run_updating_server():
     # ----------------------------------------------------------------------- #
@@ -151,7 +158,7 @@ def run_updating_server():
 
     store = ModbusSlaveContext(
         di=ModbusSequentialDataBlock(0, [100] * 100),
-        co=ModbusSequentialDataBlock(0, [100] * 100),
+        co=ModbusSequentialDataBlock(0, [0] * 100),
         hr=ModbusSequentialDataBlock(0, [100] * 100),
         ir=ModbusSequentialDataBlock(0, [100] * 100))
     context = ModbusServerContext(slaves=store, single=True)
@@ -174,7 +181,7 @@ def run_updating_server():
     loop = LoopingCall(f=updating_writer,
                        context=context)
     loop.start(time, now=False)  # initially delay by time
-    StartTcpServer(context, identity=identity, address=("172.16.20.39", 502))
+    StartTcpServer(context, identity=identity, address=("172.16.20.45", 502))
 
 if __name__ == "__main__":
     run_updating_server()
