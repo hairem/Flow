@@ -105,6 +105,19 @@ def run_once(context):
   return()
  else:
   return()
+def Flow_Check()
+ now = time.time()
+ deltaT = now - lasttime
+  SP = "Grab latest Set Point" (10.000/4096)
+  CF = 2*round(adc.read_adc(2, gain=GAIN)*0.0001875,4)
+  if (abs(SP - CF)) > 100:
+   if SP > CF:
+    "Stepup DAC"
+   if SP < CF:
+    "Stepdown DAC"
+ else:
+  lasttime = time.time()
+  return()
 
 def sensor_reader():
  """
@@ -117,6 +130,7 @@ def sensor_reader():
  AMBPressure = round(bme.pressure,4)
  GaugePress = round((mpr.pressure - bme.pressure)/2.4908890833333,2)
  temp = round(bme.temperature,2)
+ Flow_Check()
  FV = (round(adc.read_adc(2, gain=GAIN)*0.0001875,4))  #voltage
  DV = (round(adc.read_adc(3, gain=GAIN)*0.30518509476,4)) #sccm
  data = [ABSpressure, AMBPressure, GaugePress, temp, FV, DV, 1.0]
