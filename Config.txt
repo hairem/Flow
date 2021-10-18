@@ -1,7 +1,14 @@
-test
-239610010
-1024.0
-1.000
-0.000
-1.000
-0.000
+#This file holds statics values and previous settings of system.
+
+#Static
+Site:Test
+Sn: 01
+
+
+#Previous Values
+dac: 0.0 
+Fslope: 1.000
+Foffset: 0.000
+Rslope: 1.000
+Roffset: 0.000
+
